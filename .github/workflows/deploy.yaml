@@ -1,0 +1,31 @@
+name: Build and push site
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build site
+        working-directory: ./ui
+        run: |
+          npm install
+          npm run build
+
+      - name: Publish Wick Package
+        uses: candlecorp/wick-push-action@v0.0.4
+        id: push
+        with:
+          path: "app.wick"
+          username: ${{ secrets.CANDLE_APPS_REGISTRY_USERNAME }}
+          password: ${{ secrets.CANDLE_APPS_REGISTRY_PASSWORD }}
+          tags: latest

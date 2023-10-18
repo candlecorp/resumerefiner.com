@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "wick/resumerefiner/Cargo.toml",
+    ]
+}

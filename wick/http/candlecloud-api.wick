@@ -1,0 +1,19 @@
+name: candle-cloud-http
+kind: wick/component@v1
+resources:
+  - name: CANDLE_API_ENDPOINT
+    resource:
+      kind: wick/resource/url@v1
+      url: 'https://cloud.candle.dev'
+component:
+  kind: wick/component/http@v1
+  resource: CANDLE_API_ENDPOINT
+  timeout: 5
+  operations:
+    - name: get_stargazer
+      inputs:
+        - name: github_user
+          type: string
+      method: Get
+      codec: FormData
+      path: api/v0/check_stargazer?github_user={{ github_user }}

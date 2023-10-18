@@ -1,0 +1,106 @@
+kind: wick/component@v1
+name: resume_db_migrations
+metadata:
+  version: 0.1.0
+  description: All of the schema details for candle cloud
+resources:
+  - name: DB_URL
+    resource:
+      kind: wick/resource/url@v1
+      url: "{{ ctx.root_config.db_url }}"
+component:
+  kind: wick/component/sql@v1
+  with:
+    - name: db_url
+      type: string
+  resource: DB_URL
+  tls: false
+  operations:
+    - name: migration_1
+      exec: |
+        BEGIN TRANSACTION;
+
+        CREATE TABLE IF NOT EXISTS migrations (
+          id INTEGER PRIMARY KEY,
+          name TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY,
+          email TEXT NOT NULL,
+          allow_emails BOOLEAN NOT NULL DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS oauth_sessions (
+          id TEXT PRIMARY KEY,
+          token_type TEXT NOT NULL,
+          access_token TEXT NOT NULL,
+          id_token TEXT NOT NULL,
+          refresh_token TEXT NOT NULL,
+          expires_at DATETIME NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS oidc_claims (
+          session_id TEXT PRIMARY KEY REFERENCES oauth_sessions(id),
+          claims TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS entitlements (
+          id INTEGER PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          name TEXT NOT NULL,
+          value INTEGER NOT NULL,
+          value_unit TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE (user_id, name)
+        );
+
+        CREATE TABLE IF NOT EXISTS achievements (
+          id INTEGER PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          reward_value INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE (name)
+        );
+
+        CREATE TABLE IF NOT EXISTS user_achievements (
+          id INTEGER PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          achievement_id INTEGER NOT NULL REFERENCES achievements(id),
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          is_deleted BOOLEAN NOT NULL DEFAULT 0,
+          UNIQUE (user_id, achievement_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS daily_usage (
+          id INTEGER PRIMARY KEY,
+          entitlement_id INTEGER NOT NULL REFERENCES entitlements(id),
+          date DATE NOT NULL,
+          value INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE (entitlement_id, date)
+        );
+
+        INSERT OR IGNORE INTO achievements (name, description, reward_value)
+        VALUES ('stargazer', 'Star the Wick repo and get additional daily tokens', 5000);
+
+        commit;
+      on_error: Rollback
+    - name: complete_migration
+      inputs:
+        - name: name
+          type: string
+      outputs:
+        - name: output
+          type: object
+      query: |
+        INSERT INTO migrations (name) VALUES ($1) RETURNING id;
+      arguments:
+        - name
+      on_error: Rollback

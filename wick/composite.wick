@@ -1,0 +1,54 @@
+kind: wick/component@v1
+import:
+  - name: http_api
+    component:
+      kind: wick/component/manifest@v1
+      ref: ./http/openai-api.wick
+      with:
+        api_key: '{{ ctx.root_config.api_key }}'
+        api_endpoint: '{{ ctx.root_config.api_endpoint }}'
+  - name: object
+    component:
+      kind: wick/component/manifest@v1
+      ref: /Users/fshaikh/Developer/candlecorp/wick-components/components/object/object.wick
+  - name: http
+    component:
+      kind: wick/component/types@v1
+      ref: registry.candle.dev/types/http:0.5.0
+  - name: azure_openai
+    component:
+      kind: wick/component/manifest@v1
+      ref: /Users/fshaikh/Developer/candlecorp/wick-components/components/azure-openai/component.wick
+component:
+  kind: wick/component/composite@v1
+  with:
+    - name: api_key
+      type: string
+    - name: api_endpoint
+      type: string
+  operations:
+    - name: refine
+      inputs:
+        - name: request
+          type: http::HttpRequest
+        - name: body
+          type: http::HttpEvent
+      outputs:
+        - name: response
+          type: http::HttpResponse
+        - name: body
+          type: http::HttpEvent
+      uses:
+        - name: REFINE
+          operation: http_api::refine
+        - name: PARSE_COMPLETION
+          operation: azure_openai::parse_completion
+      flow:
+        - <>.request -> drop
+        - <>.body.jobRequirement -> REFINE.job_requirements
+        - <>.body.extendedResume -> REFINE.extended_resume
+        - REFINE.response -> <>.response
+        - REFINE.body -> PARSE_COMPLETION.event
+        - PARSE_COMPLETION.event -> <>.body
+        - PARSE_COMPLETION.tokens -> drop
+      
