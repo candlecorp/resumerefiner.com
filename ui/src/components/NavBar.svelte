@@ -73,7 +73,7 @@
 		<img src="wick_logo.png" class="mr-3 h-6 sm:h-9" alt="Wick Logo" />
 	</NavBrand>
 	<div class="text-center">
-		<div>Tokens<QuestionCircleSolid id="tok" class="float-right ml-2" size="lg" /></div>
+		<div>Token Usage<QuestionCircleSolid id="tok" class="float-right ml-2" size="lg" /></div>
 		<Popover
 			triggeredBy="#tok"
 			class="w-64 text-sm font-light text-gray-500 bg-white dark:text-gray-400 dark:border-gray-600 dark:bg-gray-800"

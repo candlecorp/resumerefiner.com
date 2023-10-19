@@ -1,21 +1,28 @@
 <script lang="ts">
 	import { Button, Textarea } from 'flowbite-svelte';
-	import SvelteMarkdown from 'svelte-markdown';
 	import { EventSourceParserStream } from 'eventsource-parser/stream';
 	import type { ParsedEvent } from 'eventsource-parser';
 	import NavBar from '../components/NavBar.svelte';
+	import { marked, type Token } from 'marked';
+	import Markdown from '../components/Markdown.svelte';
+	import { writable, type Writable } from 'svelte/store';
+	import Pulser from '../components/Pulser.svelte';
 
-	let jobRequirements = '';
-	let extendedResume = '';
-	let renderedContent = '';
+	let jobRequirements = ``;
+	let extendedResume = ``;
+
 	let tokens = 0;
+	let buffer = '';
+	let markdownTokens: Writable<Token[]> = writable([]);
+	let running = false;
 
 	async function refineResume(e: MouseEvent): Promise<void> {
 		if (jobRequirements === '' || extendedResume === '') {
 			console.log('please fill in both fields');
-			renderedContent = 'Please fill in both fields';
+			processBuffer('Please fill in both fields\n');
 			return;
 		}
+		running = true;
 
 		const response = await fetch('/api/refine', {
 			redirect: 'manual',
@@ -33,14 +40,13 @@
 		// Check if the request was successful
 		if (!response.ok) {
 			console.error('Failed to refine resume:', response.statusText);
-			renderedContent = 'Error. Please make sure that you are logged in.';
+			processBuffer('Error. Please make sure that you are logged in.\n');
 			return;
 		}
 
 		const body = response.body;
-		// debugger;
 		if (body) {
-			renderedContent = '';
+			markdownTokens.set([]);
 			const eventStream = response.body
 				.pipeThrough(new TextDecoderStream())
 				.pipeThrough(new EventSourceParserStream())
@@ -53,17 +59,40 @@
 				const event = value as ParsedEvent;
 				if (event.event === 'message') {
 					if (event.data === '[DONE]') {
-						renderedContent += '';
+						buffer += '\n';
+						buffer = processBuffer(buffer);
+						running = false;
 						return;
 					}
-					renderedContent += event.data;
+					buffer += event.data;
+					buffer = processBuffer(buffer);
 				}
 				if (event.event === 'tokens') {
 					console.log('Tokens:', event.data);
-					tokens = event.data;
+					tokens = parseInt(event.data, 10);
 				}
 			}
 		}
+	}
+
+	function updateTokens(newTokens: Token[]) {
+		markdownTokens.update((oldTokens) => {
+			oldTokens.push(...newTokens);
+			console.log({ tokens: oldTokens });
+			return oldTokens;
+		});
+	}
+
+	function processBuffer(buffer: string): string {
+		let firstNewline = buffer.indexOf('\n');
+		while (firstNewline !== -1) {
+			const line = buffer.slice(0, firstNewline);
+			buffer = buffer.slice(firstNewline + 1);
+			const tokens = marked.lexer(line);
+			updateTokens(tokens);
+			firstNewline = buffer.indexOf('\n');
+		}
+		return buffer;
 	}
 </script>
 
@@ -98,7 +127,12 @@
 	<div class="w-4/5 mt-2">
 		<!-- Display the refined content rendered from Markdown -->
 		<div class="card">
-			<SvelteMarkdown source={renderedContent} />
+			{#each $markdownTokens as token}
+				<Markdown {token} />
+			{/each}
+			{#if running}
+				<Pulser />
+			{/if}
 		</div>
 	</div>
 </div>

@@ -36,10 +36,11 @@
 	"type": "module",
 	"dependencies": {
 		"@popperjs/core": "^2.11.8",
+		"dompurify": "^3.0.6",
 		"eventsource-parser": "^1.1.1",
 		"flowbite": "^1.8.1",
 		"flowbite-svelte": "^0.44.18",
-		"svelte-markdown": "^0.4.0",
+		"marked": "^9.1.2",
 		"tailwind-merge": "^1.14.0"
 	}
 }
