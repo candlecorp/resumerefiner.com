@@ -128,7 +128,7 @@
 				<Textarea
 					class="resize-none"
 					rows="1"
-					placeholder="Paste Job Description and requirements Here..."
+					placeholder="Paste the job description and job requirements here..."
 					bind:value={jobRequirements}
 					on:blur={handleBlur}
 					style="height: 12em; max-height: 20em; overflow-y: auto;"
@@ -140,7 +140,7 @@
 				<Textarea
 					class="resize-none"
 					rows="1"
-					placeholder="Paste Your current resume here. Make this as descriptive as possible..."
+					placeholder="Paste your current resume here. Make this as descriptive as possible. More data points lead to better results..."
 					bind:value={extendedResume}
 					on:blur={handleBlur}
 					style="height: 12em; max-height: 20em; overflow-y: auto;"
