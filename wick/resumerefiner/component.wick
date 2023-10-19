@@ -1,0 +1,258 @@
+# yaml-language-server: $schema=https://github.com/candlecorp/wick/releases/download/nightly/schema.json
+---
+name: "resumerefiner"
+kind: wick/component@v1
+metadata:
+  version: "0.0.1"
+types:
+  - name: ConfirmStar
+    kind: wick/type/struct@v1
+    fields:
+      - name: status
+        type: bool
+      - name: message
+        type: string
+  - name: RefineRequest
+    kind: wick/type/struct@v1
+    fields:
+      - name: jobRequirement
+        type: string
+      - name: extendedResume
+        type: string
+  - name: Stargazer
+    kind: wick/type/struct@v1
+    fields:
+      - name: is_stargazer
+        type: bool
+  - name: TokenUsage
+    kind: wick/type/struct@v1
+    fields:
+      - name: user_id
+        type: u32
+      - name: entitlement_id
+        type: u32
+      - name: date
+        type: datetime
+      - name: value
+        type: u32
+  - name: DailyUsage
+    kind: wick/type/struct@v1
+    fields:
+      - name: entitlement_name
+        type: string
+      - name: entitlement_value
+        type: u32
+      - name: daily_usage_value
+        type: u32
+  - name: Entitlement
+    kind: wick/type/struct@v1
+    fields:
+      - name: name
+        type: string
+      - name: value
+        type: u32
+  - name: Achievement
+    kind: wick/type/struct@v1
+    fields:
+      - name: name
+        type: string
+      - name: description
+        type: string
+      - name: reward_value
+        type: u32
+      - name: created_at
+        type: datetime
+  - name: GithubUsername
+    kind: wick/type/struct@v1
+    fields:
+      - name: github_username
+        type: string?
+  - name: User
+    kind: wick/type/struct@v1
+    fields:
+      - name: id
+        type: u32
+      - name: email
+        type: string
+      - name: created_at
+        type: datetime
+requires:
+  - name: openai_client
+    interface:
+      operations:
+        - name: refine
+          inputs:
+            - name: jobRequirement
+              type: string
+            - name: extendedResume
+              type: string
+          outputs:
+            - name: response
+              type: http::HttpResponse
+            - name: body
+              type: http::HttpEvent
+            - name: tokens
+              type: u32
+  - name: candle_cloud_client
+    interface:
+      operations:
+        - name: get_stargazer
+          inputs:
+            - name: github_user
+              type: string
+          outputs:
+            - name: response
+              type: http::HttpResponse
+            - name: body
+              type: Stargazer
+  - name: db_client
+    interface:
+      operations:
+        - name: add_entitlement
+          inputs:
+            - name: email
+              type: string
+            - name: entitlement
+              type: string
+            - name: value
+              type: u32
+            - name: value_unit
+              type: string
+          outputs:
+            - name: output
+              type: Entitlement
+        - name: upsert_token_usage
+          inputs:
+            - name: email
+              type: string
+            - name: tokens
+              type: u32
+          outputs:
+            - name: output
+              type: TokenUsage
+        - name: get_daily_usage
+          inputs:
+            - name: email
+              type: string
+            - name: entitlement
+              type: string
+          outputs:
+            - name: output
+              type: DailyUsage
+        - name: update_entitlement
+          inputs:
+            - name: email
+              type: string
+            - name: entitlement
+              type: string
+            - name: value
+              type: u32
+          outputs:
+            - name: output
+              type: object
+        - name: get_achievement
+          inputs:
+            - name: email
+              type: string
+            - name: achievement
+              type: string
+          outputs:
+            - name: output
+              type: Achievement
+        - name: create_achievement
+          inputs:
+            - name: email
+              type: string
+            - name: achievement
+              type: string
+          outputs:
+            - name: output
+              type: object
+        - name: get_github_username
+          inputs:
+            - name: email
+              type: string
+          outputs:
+            - name: output
+              type: GithubUsername
+        - name: get_user
+          inputs:
+            - name: email
+              type: string
+          outputs:
+            - name: output
+              type: User
+        - name: create_user
+          inputs:
+            - name: email
+              type: string
+          outputs:
+            - name: output
+              type: User
+import:
+  - name: http
+    component:
+      kind: wick/component/types@v1
+      ref: registry.candle.dev/types/http:0.5.0
+component:
+  kind: wick/component/wasmrs@v1
+  ref: build/component.signed.wasm
+  with:
+    - name: entitlements
+      type: Entitlement[]
+  operations:
+    - name: login
+      inputs:
+        - name: request
+          type: http::HttpRequest
+        - name: body
+          type: object
+      outputs:
+        - name: response
+          type: http::HttpResponse
+        - name: body
+          type: object
+    - name: refine
+      inputs:
+        - name: request
+          type: http::HttpRequest
+        - name: body
+          type: RefineRequest
+      outputs:
+        - name: response
+          type: http::HttpResponse
+        - name: body
+          type: http::HttpEvent
+    - name: check_usage
+      inputs:
+        - name: request
+          type: http::HttpRequest
+        - name: body
+          type: object
+      outputs:
+        - name: response
+          type: http::HttpResponse
+        - name: body
+          type: DailyUsage
+    - name: confirm_star
+      inputs:
+        - name: request
+          type: http::HttpRequest
+        - name: body
+          type: object
+      outputs:
+        - name: response
+          type: http::HttpResponse
+        - name: body
+          type: ConfirmStar
+    - name: stargazer
+      inputs:
+        - name: request
+          type: http::HttpRequest
+        - name: body
+          type: object
+      outputs:
+        - name: response
+          type: http::HttpResponse
+        - name: body
+          type: Stargazer

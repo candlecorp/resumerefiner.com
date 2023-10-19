@@ -1,0 +1,195 @@
+kind: wick/component@v1
+name: resume_sql
+metadata:
+  version: 0.1.0
+  description: All of the schema details for candle cloud
+resources:
+  - name: DB_URL
+    resource:
+      kind: wick/resource/url@v1
+      url: "{{ ctx.root_config.db_url }}"
+component:
+  kind: wick/component/sql@v1
+  with:
+    - name: db_url
+      type: string
+  resource: DB_URL
+  tls: false
+  operations:
+    - name: upsert_token_usage
+      inputs:
+        - name: email
+          type: string
+        - name: tokens
+          type: u32
+      outputs:
+        - name: output
+          type: object
+      query: |
+        INSERT OR REPLACE INTO daily_usage (entitlement_id, date, value)
+        SELECT 
+            entitlements.id,
+            CURRENT_DATE,
+            COALESCE(
+                (SELECT value FROM daily_usage 
+                WHERE 
+                entitlement_id in (SELECT id FROM entitlements WHERE user_id = () AND name = entitlements.name)
+                AND date = CURRENT_DATE) + $2, 
+                $2
+            )
+        FROM users
+        INNER JOIN entitlements ON entitlements.user_id = users.id
+        WHERE users.email = $1
+        and entitlement.name = 'tokens'
+        returning *;
+      arguments:
+        - email
+        - tokens
+    - name: get_daily_usage
+      inputs:
+        - name: email
+          type: string
+        - name: entitlement
+          type: string
+      outputs:
+        - name: output
+          type: object
+      query: |
+        SELECT
+            entitlements.name as entitlement_name,
+            entitlements.value as entitlement_value, 
+            COALESCE(daily_usage.value, 0) AS daily_usage_value
+        FROM 
+            users
+        INNER JOIN 
+            entitlements ON entitlements.user_id = users.id
+        LEFT JOIN 
+            daily_usage ON daily_usage.entitlement_id = entitlements.id
+            AND daily_usage.date = CURRENT_DATE
+        WHERE 
+            users.email = $1 
+            AND entitlements.name = $2;
+      arguments:
+        - email
+        - entitlement
+    - name: update_entitlement
+      inputs:
+        - name: email
+          type: string
+        - name: entitlement
+          type: string
+        - name: value
+          type: u32
+      outputs:
+        - name: output
+          type: object
+      exec: |
+        UPDATE entitlements
+        SET value = $3
+        WHERE user_id = (SELECT id FROM users WHERE email = $1)
+        AND name = $2;
+      arguments:
+        - email
+        - entitlement
+        - value
+    - name: get_achievement
+      inputs:
+        - name: email
+          type: string
+        - name: achievement
+          type: string
+      outputs:
+        - name: output
+          type: object
+      query: |
+        SELECT achievements.name, achievements.description, achievements.reward_value, strftime('%Y-%m-%dT%H:%M:%SZ', user_achievements.created_at) created_at
+        FROM users
+        INNER JOIN user_achievements ON user_achievements.user_id = users.id
+        INNER JOIN achievements ON achievements.id = user_achievements.achievement_id
+        WHERE users.email = $1 AND achievements.name = $2 AND user_achievements.is_deleted = 0;
+      arguments:
+        - email
+        - achievement
+    - name: add_entitlement
+      inputs:
+        - name: email
+          type: string
+        - name: entitlement
+          type: string
+        - name: value
+          type: u32
+        - name: value_unit
+          type: string
+      outputs:
+        - name: output
+          type: object
+      query: |
+        INSERT INTO entitlements (user_id, name, value, value_unit)
+        SELECT users.id, $2, $3, $4
+        FROM users
+        WHERE users.email = $1
+        RETURNING entitlements.name, entitlements.value, entitlements.value_unit;
+      arguments:
+        - email
+        - entitlement
+        - value
+        - value_unit
+    - name: create_achievement
+      inputs:
+        - name: email
+          type: string
+        - name: achievement
+          type: string
+      outputs:
+        - name: output
+          type: object
+      exec: |
+        INSERT INTO user_achievements (user_id, achievement_id)
+        SELECT users.id, achievements.id
+        FROM users
+        INNER JOIN achievements ON achievements.name = $2
+        WHERE users.email = $1;
+      arguments:
+        - email
+        - achievement
+    - name: get_github_username
+      inputs:
+        - name: email
+          type: string
+      outputs:
+        - name: output
+          type: object
+      query: |
+        SELECT json_extract(claims, '$.github_username') AS github_username
+        FROM oidc_claims
+        WHERE json_extract(claims, '$.email') = $1
+        AND json_extract(claims, '$.github_username') IS NOT NULL
+        LIMIT 1;
+      arguments:
+        - email
+    - name: get_user
+      inputs:
+        - name: email
+          type: string
+      outputs:
+        - name: output
+          type: object
+      query: |
+        SELECT id, email, strftime('%Y-%m-%dT%H:%M:%SZ', created_at) created_at
+        FROM users
+        WHERE email = $1;
+      arguments:
+        - email
+    - name: create_user
+      inputs:
+        - name: email
+          type: string
+      outputs:
+        - name: output
+          type: object
+      query: |
+        INSERT INTO users (email)
+        VALUES ($1)
+        RETURNING id, email, strftime('%Y-%m-%dT%H:%M:%SZ', created_at) created_at;
+      arguments:
+        - email

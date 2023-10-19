@@ -1,0 +1,147 @@
+---
+kind: wick/app@v1
+name: resume-refiner
+metadata:
+  description: Demo application for refining resumes
+  version: 0.2.4
+  authors:
+    - "Wick Team"
+  vendors:
+    - "Candle Corporation"
+  licenses:
+    - Apache-2.0
+package:
+  registry:
+    host: registry.candle.dev
+    namespace: candle-apps
+  files:
+    - ./ui/build
+resources:
+  - name: httpserver
+    resource:
+      kind: wick/resource/tcpport@v1
+      port: "{{ ctx.env.HTTP_PORT }}"
+      address: 0.0.0.0
+  - name: DIR
+    resource:
+      kind: wick/resource/volume@v1
+      path: '{{__dirname}}/ui/build'
+import:
+  - name: oauth_composite
+    component:
+      kind: wick/component/manifest@v1
+      ref: registry.candle.dev/common/oauth-sqlite:0.3.0
+      with:
+        auth_endpoint: https://auth.candle.dev/realms/candlecloud/protocol/openid-connect/auth
+        token_endpoint: https://auth.candle.dev/realms/candlecloud/protocol/openid-connect/token
+        logout_endpoint: https://auth.candle.dev/realms/candlecloud/protocol/openid-connect/logout
+        redirect_uri: "{{ ctx.env.OAUTH_REDIRECT_URI}}"
+        session_cookie_name: sid
+        client_id: "{{ ctx.env.OAUTH_CLIENT_ID }}"
+        client_secret: "{{ ctx.env.OAUTH_CLIENT_SECRET }}"
+        scope: "openid email"
+        db_url: "{{ ctx.env.DB_URL }}"
+        email_claim: email
+        logout_redirect_uri: "{{ ctx.env.OAUTH_LOGOUT_REDIRECT_URI }}"
+        redirect_logout: true
+        groups_claim: groups
+  - name: db_client
+    component:
+      kind: wick/component/manifest@v1
+      ref: ./wick/db/resume-sql.wick
+      with:
+        db_url: '{{ ctx.env.DB_URL }}'
+  - name: openai_api
+    component:
+      kind: wick/component/manifest@v1
+      ref: ./wick/http/openai-composite.wick
+      with:
+        api_key: '{{ ctx.env.API_KEY }}'
+        api_endpoint: '{{ ctx.env.API_ENDPOINT }}'
+  - name: candle_cloud_api
+    component:
+      kind: wick/component/manifest@v1
+      ref: ./wick/http/candlecloud-api.wick
+      with:
+        candle_cloud_api_endpoint: '{{ ctx.env.CANDLE_CLOUD_API_ENDPOINT }}'
+  - name: api
+    component:
+      kind: wick/component/manifest@v1
+      ref: ./wick/resumerefiner/component.wick
+      provide:
+        openai_client: openai_api
+        candle_cloud_client: candle_cloud_api
+        db_client: db_client
+      with:
+        entitlements:
+          - name: tokens
+            value: 5000
+  - name: migrations 
+    component:
+      kind: wick/component/manifest@v1
+      ref: ./wick/db/migrations.wick
+      with:
+        db_url: "{{ ctx.env.DB_URL }}"
+triggers:
+  - kind: wick/trigger/time@v1
+    schedule:
+      cron: "*/1 * * * * *"
+      repeat: 1
+    payload:
+      - name: name
+        value: "migration_1"
+    operation: migrations::migration_1
+  - kind: wick/trigger/http@v1
+    resource: httpserver
+    routers:
+      - kind: wick/router/raw@v1
+        path: /oidc/userinfo
+        operation: oauth_composite::get_user
+      - kind: wick/router/raw@v1
+        middleware:
+         request:
+           - oauth_composite::auth
+           - oauth_composite::oidc
+        codec: Json
+        path: /api/refine
+        operation: api::refine
+      - kind: wick/router/raw@v1
+        middleware:
+          request:
+           - oauth_composite::auth
+           - oauth_composite::oidc
+        path: /login
+        operation: api::login
+      - kind: wick/router/raw@v1
+        middleware:
+          request:
+           - oauth_composite::auth
+           - oauth_composite::oidc
+        path: /check_usage
+        operation: api::check_usage
+      - kind: wick/router/raw@v1
+        middleware:
+          request:
+           - oauth_composite::auth
+           - oauth_composite::oidc
+        path: /confirm_star
+        operation: api::confirm_star
+      - kind: wick/router/raw@v1
+        middleware:
+          request:
+           - oauth_composite::auth
+           - oauth_composite::oidc
+        path: /stargazer
+        operation: api::stargazer
+      - kind: wick/router/static@v1
+        middleware:
+          request:
+           - oauth_composite::auth
+           - oauth_composite::oidc
+        path: /oidc/
+        volume: DIR
+      - kind: wick/router/static@v1
+        path: /
+        volume: DIR
+        fallback: index.html
+

@@ -1,0 +1,30 @@
+kind: wick/component@v1
+name: migrations
+metadata:
+  version: 0.1.0
+  description: Candle Cloud Database Migrations
+  licenses:
+    - Apache-2.0
+import:
+  - name: db_client
+    component:
+      kind: wick/component/manifest@v1
+      ref: ./migrations-sql.wick
+      with:
+        db_url: "{{ ctx.root_config.db_url }}"
+component:
+  kind: wick/component/composite@v1
+  with:
+    - name: db_url
+      type: string
+  operations:
+    - name: migration_1
+      uses:
+        - name: SEND_DONE
+          operation: core::sender
+          with:
+            output:
+              message: "Migration 1 complete"
+      flow:
+        - db_client::migration_1 -> <>.output
+        - <>.name -> drop
