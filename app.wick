@@ -3,7 +3,7 @@ kind: wick/app@v1
 name: resume-refiner
 metadata:
   description: Demo application for refining resumes
-  version: 0.2.0
+  version: 0.2.1
   authors:
     - "Wick Team"
   vendors:
