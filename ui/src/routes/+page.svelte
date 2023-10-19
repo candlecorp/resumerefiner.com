@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { Button, Textarea } from 'flowbite-svelte';
+	import {
+		Button,
+		Textarea,
+		Footer,
+		FooterCopyright,
+		FooterLinkGroup,
+		FooterLink
+	} from 'flowbite-svelte';
 	import { EventSourceParserStream } from 'eventsource-parser/stream';
 	import type { ParsedEvent } from 'eventsource-parser';
 	import NavBar from '../components/NavBar.svelte';
@@ -136,6 +143,16 @@
 		</div>
 	</div>
 </div>
+<Footer class="absolute bottom-0 left-0 z-20 w-full">
+	<FooterCopyright href="/" by="Candle" year={2023} />
+	<FooterLinkGroup
+		ulClass="flex flex-wrap items-center mt-3 text-sm text-gray-500 dark:text-gray-400 sm:mt-0"
+	>
+		<FooterLink href="https://github.com/candlecorp/resumerefiner.com">Source</FooterLink>
+		<FooterLink href="https://candle.dev/privacy.html">Privacy Policy</FooterLink>
+		<FooterLink href="https://discord.gg/candle">Discord</FooterLink>
+	</FooterLinkGroup>
+</Footer>
 
 <style>
 	/* Add styling for the Card, if you'd like */
