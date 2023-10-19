@@ -33,14 +33,14 @@ component:
             COALESCE(
                 (SELECT value FROM daily_usage 
                 WHERE 
-                entitlement_id in (SELECT id FROM entitlements WHERE user_id = () AND name = entitlements.name)
+                entitlement_id in (SELECT id FROM entitlements WHERE user_id = users.id AND name = entitlements.name)
                 AND date = CURRENT_DATE) + $2, 
                 $2
             )
         FROM users
         INNER JOIN entitlements ON entitlements.user_id = users.id
         WHERE users.email = $1
-        and entitlement.name = 'tokens'
+        and entitlements.name = 'tokens'
         returning *;
       arguments:
         - email
