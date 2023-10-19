@@ -3,7 +3,7 @@ kind: wick/app@v1
 name: resume-refiner
 metadata:
   description: Demo application for refining resumes
-  version: 0.2.8
+  version: 0.2.9
   authors:
     - 'Wick Team'
   vendors:
@@ -34,13 +34,14 @@ import:
   - name: oauth_composite
     component:
       kind: wick/component/manifest@v1
-      ref: registry.candle.dev/common/oauth-sqlite:0.3.0
+      ref: registry.candle.dev/common/oauth-sqlite:0.3.1
       with:
         auth_endpoint: https://auth.candle.dev/realms/candlecloud/protocol/openid-connect/auth
         token_endpoint: https://auth.candle.dev/realms/candlecloud/protocol/openid-connect/token
         logout_endpoint: https://auth.candle.dev/realms/candlecloud/protocol/openid-connect/logout
         redirect_uri: '{{ ctx.env.OAUTH_REDIRECT_URI}}'
         session_cookie_name: sid
+        session_cookie_duration_minutes: 20000
         client_id: '{{ ctx.env.OAUTH_CLIENT_ID }}'
         client_secret: '{{ ctx.env.OAUTH_CLIENT_SECRET }}'
         scope: 'openid email'

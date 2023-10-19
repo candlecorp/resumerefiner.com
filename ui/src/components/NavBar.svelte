@@ -9,7 +9,6 @@
 	export let tokens = 0;
 	let stargazer = false;
 	let api = new API();
-	let user_info: UserInfo;
 	let daily_usage = 0;
 	let token_usage: TokenUsage = {
 		daily_usage_value: 0,
@@ -20,16 +19,20 @@
 	let stargazer_response_body = '';
 
 	onMount(async () => {
-		user_info = await api.getUserInfo();
+		userInfo();
+		is_stargazer();
+		dailyUsage();
+	});
+
+	async function userInfo() {
+		let user_info: UserInfo = await api.getUserInfo();
 		if (user_info) {
 			console.log(user_info);
 			if (user_info.email != null) {
 				loggedIn = true;
 			}
 		}
-		is_stargazer();
-		dailyUsage();
-	});
+	}
 
 	async function is_stargazer() {
 		let confirm_star: Stargazer = await api.isStargazer();
