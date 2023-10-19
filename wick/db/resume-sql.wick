@@ -163,6 +163,7 @@ component:
         SELECT json_extract(claims, '$.github_username') AS github_username
         FROM oidc_claims
         WHERE json_extract(claims, '$.email') = $1
+        AND json_extract(claims, '$.github_username') IS NOT NULL
         LIMIT 1;
       arguments:
         - email
