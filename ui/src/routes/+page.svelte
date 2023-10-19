@@ -14,6 +14,7 @@
 	import Markdown from '../components/Markdown.svelte';
 	import { writable, type Writable } from 'svelte/store';
 	import Pulser from '../components/Pulser.svelte';
+	import { onMount } from 'svelte';
 
 	let jobRequirements = ``;
 	let extendedResume = ``;
@@ -23,12 +24,27 @@
 	let markdownTokens: Writable<Token[]> = writable([]);
 	let running = false;
 
+	onMount(() => {
+		if (localStorage.getItem('jobRequirements')) {
+			jobRequirements = localStorage.getItem('jobRequirements') ?? '';
+		}
+		if (localStorage.getItem('extendedResume')) {
+			extendedResume = localStorage.getItem('extendedResume') ?? '';
+		}
+	});
+
+	function handleBlur() {
+		localStorage.setItem('jobRequirements', jobRequirements);
+		localStorage.setItem('extendedResume', extendedResume);
+	}
+
 	async function refineResume(e: MouseEvent): Promise<void> {
 		if (jobRequirements === '' || extendedResume === '') {
 			console.log('please fill in both fields');
 			processBuffer('Please fill in both fields\n');
 			return;
 		}
+
 		running = true;
 
 		const response = await fetch('/api/refine', {
@@ -113,6 +129,7 @@
 				rows="1"
 				placeholder="Paste Job Description and requirements Here..."
 				bind:value={jobRequirements}
+				on:blur={handleBlur}
 				style="height: 12em; max-height: 20em; overflow-y: auto;"
 			/>
 		</div>
@@ -124,6 +141,7 @@
 				rows="1"
 				placeholder="Paste Your current resume here. Make this as descriptive as possible..."
 				bind:value={extendedResume}
+				on:blur={handleBlur}
 				style="height: 12em; max-height: 20em; overflow-y: auto;"
 			/>
 		</div>
