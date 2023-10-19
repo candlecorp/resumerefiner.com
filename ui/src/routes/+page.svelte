@@ -13,6 +13,7 @@
 	async function refineResume(e: MouseEvent): Promise<void> {
 		if (jobRequirements === '' || extendedResume === '') {
 			console.log('please fill in both fields');
+			renderedContent = 'Please fill in both fields';
 			return;
 		}
 
@@ -32,6 +33,7 @@
 		// Check if the request was successful
 		if (!response.ok) {
 			console.error('Failed to refine resume:', response.statusText);
+			renderedContent = 'Error. Please make sure that you are logged in.';
 			return;
 		}
 
