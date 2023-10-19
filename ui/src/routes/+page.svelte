@@ -119,58 +119,60 @@
 	}
 </script>
 
-<NavBar {tokens} />
+<div class="flex flex-col min-h-screen">
+	<NavBar {tokens} />
 
-<div class="mt-10 w-full flex flex-col justify-center items-center">
-	<div class="w-4/5">
-		<div>
-			<Textarea
-				class="resize-none"
-				rows="1"
-				placeholder="Paste Job Description and requirements Here..."
-				bind:value={jobRequirements}
-				on:blur={handleBlur}
-				style="height: 12em; max-height: 20em; overflow-y: auto;"
-			/>
+	<div class="flex-grow mt-10 w-full flex flex-col justify-center items-center">
+		<div class="w-4/5">
+			<div>
+				<Textarea
+					class="resize-none"
+					rows="1"
+					placeholder="Paste Job Description and requirements Here..."
+					bind:value={jobRequirements}
+					on:blur={handleBlur}
+					style="height: 12em; max-height: 20em; overflow-y: auto;"
+				/>
+			</div>
+		</div>
+		<div class="w-4/5">
+			<div>
+				<Textarea
+					class="resize-none"
+					rows="1"
+					placeholder="Paste Your current resume here. Make this as descriptive as possible..."
+					bind:value={extendedResume}
+					on:blur={handleBlur}
+					style="height: 12em; max-height: 20em; overflow-y: auto;"
+				/>
+			</div>
+		</div>
+		<div class="flex justify-center mt-2">
+			<Button on:click={refineResume}>Refine!</Button>
+		</div>
+		<div class="w-4/5 mt-2">
+			<!-- Display the refined content rendered from Markdown -->
+			<div class="card">
+				{#each $markdownTokens as token}
+					<Markdown {token} />
+				{/each}
+				{#if running}
+					<Pulser />
+				{/if}
+			</div>
 		</div>
 	</div>
-	<div class="w-4/5">
-		<div>
-			<Textarea
-				class="resize-none"
-				rows="1"
-				placeholder="Paste Your current resume here. Make this as descriptive as possible..."
-				bind:value={extendedResume}
-				on:blur={handleBlur}
-				style="height: 12em; max-height: 20em; overflow-y: auto;"
-			/>
-		</div>
-	</div>
-	<div class="flex justify-center mt-2">
-		<Button on:click={refineResume}>Refine!</Button>
-	</div>
-	<div class="w-4/5 mt-2">
-		<!-- Display the refined content rendered from Markdown -->
-		<div class="card">
-			{#each $markdownTokens as token}
-				<Markdown {token} />
-			{/each}
-			{#if running}
-				<Pulser />
-			{/if}
-		</div>
-	</div>
+	<Footer class="bottom-0 left-0 z-20 w-full">
+		<FooterCopyright href="https://candle.dev" by="Candle" year={2023} />
+		<FooterLinkGroup
+			ulClass="flex flex-wrap items-center mt-3 text-sm text-gray-500 dark:text-gray-400 sm:mt-0"
+		>
+			<FooterLink href="https://github.com/candlecorp/resumerefiner.com">Source</FooterLink>
+			<FooterLink href="https://candle.dev/privacy.html">Privacy Policy</FooterLink>
+			<FooterLink href="https://discord.gg/candle">Discord</FooterLink>
+		</FooterLinkGroup>
+	</Footer>
 </div>
-<Footer class="absolute bottom-0 left-0 z-20 w-full">
-	<FooterCopyright href="/" by="Candle" year={2023} />
-	<FooterLinkGroup
-		ulClass="flex flex-wrap items-center mt-3 text-sm text-gray-500 dark:text-gray-400 sm:mt-0"
-	>
-		<FooterLink href="https://github.com/candlecorp/resumerefiner.com">Source</FooterLink>
-		<FooterLink href="https://candle.dev/privacy.html">Privacy Policy</FooterLink>
-		<FooterLink href="https://discord.gg/candle">Discord</FooterLink>
-	</FooterLinkGroup>
-</Footer>
 
 <style>
 	/* Add styling for the Card, if you'd like */
