@@ -102,6 +102,10 @@
 						{stargazer_response_body}
 					</Alert>
 				{/if}
+
+				<div class="mb-2 text-sm font-light">
+					Current Daily Token Limit: {token_usage.entitlement_value}
+				</div>
 				<div class="mb-2 text-sm font-light">
 					Any questions or comments? Join our <a
 						href="https://discord.gg/candle"
