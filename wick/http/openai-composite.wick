@@ -18,7 +18,7 @@ import:
   - name: azure_openai
     component:
       kind: wick/component/manifest@v1
-      ref: registry.candle.dev/candle/azure-openai:0.2.4
+      ref: registry.candle.dev/candle/azure-openai:0.2.5
 component:
   kind: wick/component/composite@v1
   with:

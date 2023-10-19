@@ -25,7 +25,7 @@ component:
       outputs:
         - name: output
           type: object
-      query: |
+      exec: |
         INSERT OR REPLACE INTO daily_usage (entitlement_id, date, value)
         SELECT 
             entitlements.id,
@@ -40,8 +40,7 @@ component:
         FROM users
         INNER JOIN entitlements ON entitlements.user_id = users.id
         WHERE users.email = $1
-        and entitlements.name = 'tokens'
-        returning *;
+        and entitlements.name = 'tokens';
       arguments:
         - email
         - tokens

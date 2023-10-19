@@ -129,7 +129,7 @@ requires:
               type: u32
           outputs:
             - name: output
-              type: TokenUsage
+              type: object
         - name: get_daily_usage
           inputs:
             - name: email
