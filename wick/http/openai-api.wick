@@ -1,0 +1,47 @@
+name: refine_http
+kind: wick/component@v1
+resources:
+  - name: OPENAI_API_ENDPOINT
+    resource:
+      kind: wick/resource/url@v1
+      url: '{{ ctx.root_config.api_endpoint }}'
+component:
+  kind: wick/component/http@v1
+  resource: OPENAI_API_ENDPOINT
+  timeout: 120
+  with:
+    - name: api_key
+      type: string
+    - name: api_endpoint
+      type: string
+  operations:
+    - name: refine
+      inputs:
+        - name: job_requirements
+          type: string
+        - name: extended_resume
+          type: string
+      method: Post
+      codec: Json
+      path: /openai/deployments/gpt4-32k/chat/completions?api-version=2023-07-01-preview
+      headers:
+        "Content-Type": ["application/json"]
+        "api-key": ["{{ ctx.root_config.api_key }}"]
+      body:
+        messages: 
+          - role: "system"
+            content: |
+              You are an AI assistant with a specialty in refining resumes to precisely align with specified job requirements. Your core objective is to deliver constructive feedback, actionable suggestions, and edits in a direct and honest manner.
+          - role: "user"
+            content: "Here are the job requirements: {{ job_requirements }}."
+          - role: "assistant"
+            content: "Please provide your resume so that I can refine it for you."
+          - role: "user"
+            content: "Here is my resume: {{ extended_resume }}."
+        max_tokens: 10000
+        temperature: 0.7
+        frequency_penalty: 0
+        presence_penalty: 0
+        top_p: 0.95
+        stop: null
+        stream: true
