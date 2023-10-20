@@ -3,7 +3,7 @@ import:
   - name: http_api
     component:
       kind: wick/component/manifest@v1
-      ref: ./openai-api.wick
+      ref: registry.candle.dev/candle-apps/openai-api:0.1.0
       with:
         api_key: '{{ ctx.root_config.api_key }}'
         api_endpoint: '{{ ctx.root_config.api_endpoint }}'
